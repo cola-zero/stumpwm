@@ -157,6 +157,6 @@
       (list "^03%N^n "
 	    '(:eval (run-shell-command
                      "LANG=c; date '+%m/%d(%a)_%H:%M'|tr -d [:cntrl:]" t))
-            " | %b | %g"))
+            " | %g"))
 (unless (head-mode-line (current-head))
   (mode-line))
