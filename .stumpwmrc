@@ -2,15 +2,12 @@
 ; .stumpwmrc
 
 (in-package :stumpwm)
-(require :bordeaux-threads)
 
 (setq *startup-message* nil)
 
-(mapcar #'(lambda (x)
-            (load (make-pathname
-                   :directory '(:relative ".stumpwm.d" "contrib")
-                   :name x :type "lisp")))
-        '("battery" "notifications"))
+(loop for file in '("battery" "notifications")
+      do (load (make-pathname :name file :type "lisp" :directory
+                              '(:relative ".stumpwm.d" "contrib"))))
 
 ; --- process management ----------------------------------------
 (defun ps-exists (ps)
@@ -32,9 +29,7 @@
 ; --- run shell commands  ---------------------------------------
 
 (defun run-or-raise-emacs ()
-  (if (ps-exists "emacs")
-    (run-or-raise "urxvt" '(:class "URxvt"))
-    (run-shell-command "urxvt -e emacs -nw")))
+  (run-or-raise "emacs-snapshot-gtk" '(:class "Emacs")))
 
 (run-shell-command "xsetroot -solid black")
 (run-shell-command "/opt/atokx3/sample/iiimf_status_hide")
@@ -44,11 +39,7 @@
 (start-uniq-command-ps "gnome-valume-manager")
 (start-uniq-command-ps "update-notifier")
 (run-shell-command "~/src/backup/alert.sh")
-(bordeaux-threads:make-thread
- (lambda ()
-   (sleep 1)
-   (run-shell-command "xset fp+ ~/.fonts")
-   (run-or-raise-emacs)))
+(run-or-raise-emacs)
 
 ; --- shell command definitions  --------------------------------
 (define-stumpwm-type :password (input prompt)
@@ -87,6 +78,8 @@
 (define-sudo-command reboot "reboot")
 (define-sudo-command shutdown "shutdown -h now")
 (define-sudo-command backup "~/src/backup/backup.sh")
+(define-sudo-command apache-start "/etc/init.d/apache2 start")
+(define-sudo-command apache-stop  "/etc/init.d/apache2 stop")
 
 ; --- stumpwm command definitions -------------------------------
 (defmacro def-run-or-raise-command (cmd prop)
@@ -102,8 +95,10 @@
 (def-run-or-raise-command virtualbox '(:class "VirtualBox"))
 
 (defcommand show-battery () ()
-  (echo-string (current-screen)
-               (run-shell-command "acpi" t)))
+  (echo-string (current-screen) (run-shell-command "acpi" t)))
+
+(defcommand uptime () ()
+  (echo-string (current-screen) (run-shell-command "uptime" t)))
 
 (defcommand gnome-panel () ()
   (if (ps-exists "gnome-panel")
@@ -122,27 +117,22 @@
 (define-key *root-map*   (kbd "s")   "colon exec firefox http://")
 (define-key *root-map*   (kbd "*")   "show-battery")
 (define-key *root-map*   (kbd "w")   "windowlist")
-(define-key *root-map*   (kbd "C-w") "windowlist")
 (define-key *root-map*   (kbd "c")   "gnome-terminal")
-(define-key *root-map*   (kbd "C-c") "gnome-terminal")
 (define-key *root-map*   (kbd "e")   "emacs")
-(define-key *root-map*   (kbd "C-e") "emacs")
 (define-key *root-map*   (kbd "b")   "firefox")
-(define-key *root-map*   (kbd "C-b") "firefox")
 (define-key *root-map*   (kbd "C-o") "soffice")
 (define-key *root-map*   (kbd "v")   "virtualbox")
+(define-key *root-map*   (kbd "N")   '*notifications-map*)
 ; emacs style
-(define-key *root-map*   (kbd "0") "remove")
-(define-key *root-map*   (kbd "1") "only")
-(define-key *root-map*   (kbd "2") "vsplit")
-(define-key *root-map*   (kbd "3") "hsplit")
+(define-key *root-map*   (kbd "0")   "remove")
+(define-key *root-map*   (kbd "1")   "only")
+(define-key *root-map*   (kbd "2")   "vsplit")
+(define-key *root-map*   (kbd "3")   "hsplit")
 (define-key *input-map*  (kbd "C-m") 'input-submit)
 (define-key *input-map*  (kbd "C-h") 'input-delete-backward-char)
 (define-key *input-map*  (kbd "M-p") 'input-history-back)
 (define-key *input-map*  (kbd "M-n") 'input-history-forward)
 (define-key *resize-map* (kbd "C-m") "exit-iresize")
-(define-key *resize-map* (kbd "C-t") "exit-iresize")
-(define-key *root-map*   (kbd "N") '*notifications-map*)
 
 ; --- mode line -------------------------------------------------
 (setf *mode-line-screen-position* :top)
@@ -155,7 +145,7 @@
 (setf *mode-line-border-color* "dark grey")
 (setf *screen-mode-line-format*
       (list "^03%N^n "
-	    '(:eval (run-shell-command
+            '(:eval (run-shell-command
                      "LANG=c; date '+%m/%d(%a)_%H:%M'|tr -d [:cntrl:]" t))
             " | %g"))
 (unless (head-mode-line (current-head))
