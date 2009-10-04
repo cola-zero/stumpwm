@@ -38,16 +38,14 @@
 ; --- run shell commands  ---------------------------------------
 
 (defun run-or-raise-emacs ()
-  (run-or-raise "emacs-snapshot-gtk" '(:class "Emacs")))
+  (run-or-raise "emacs" '(:class "Emacs")))
 
 (run-shell-command "xsetroot -solid black")
-(run-shell-command "/opt/atokx3/sample/iiimf_status_hide")
 (start-uniq-command-ps "nm-applet" :op "--sm-disable")
 (start-uniq-command-ps "gnome-settings-daemon")
 (start-uniq-command-ps "gnome-power-manager")
 (start-uniq-command-ps "gnome-valume-manager")
 (start-uniq-command-ps "update-notifier")
-(run-shell-command "~/src/backup/alert.sh")
 (run-or-raise-emacs)
 
 ; --- shell command definitions  --------------------------------
