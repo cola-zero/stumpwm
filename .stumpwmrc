@@ -15,13 +15,18 @@
 (defvar sysmon-timer nil)
 (defvar mode-line-updater nil)
 
-(when sysmon-timer (cancel-timer sysmon-timer))
+(when sysmon-timer
+  (cancel-timer sysmon-timer)
+  (setq sysmon-timer nil))
 (setq sysmon-timer
       (run-with-timer 0 1 'sysmon:update-system-info))
 
-(when mode-line-updater (cancel-timer mode-line-updater))
+(defcommand nop () () 0) ;; dummy command
+(when mode-line-updater
+  (cancel-timer mode-line-updater)
+  (setq mode-line-updater nil))
 (setq mode-line-updater
-      (run-with-timer 0 1.5 'update-all-mode-lines))
+      (run-with-timer 0 1 'stumpwm:run-commands "nop"))
 
 ; --- process management ----------------------------------------
 (defun ps-exists (ps)
