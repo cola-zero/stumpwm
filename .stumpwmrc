@@ -156,6 +156,17 @@
       (list "^03%N^n "
             '(:eval (run-shell-command
                      "LANG=c; date '+%m/%d(%a)_%H:%M'|tr -d [:cntrl:]" t))
-            " | %g"))
+            " | %g"
+	    "
+"
+	    "^03%N^n "
+	    '(:eval
+	      (let ((cpu-usage (sysmon:get-cpu-usage)))
+		(format nil "cpu: ~,1,2,,F(user:~,1,2,,F, sys:~,1,2,,F)"
+			(getf cpu-usage :total)
+			(getf cpu-usage :user)
+			(getf cpu-usage :system))))
+	    ))
 (unless (head-mode-line (current-head))
   (mode-line))
+
