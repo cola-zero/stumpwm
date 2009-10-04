@@ -3,7 +3,8 @@
   (:nicknames "SYSMON")
   (:use "COMMON-LISP" "COMMON-LISP-USER")
   ;; (:shadow "READ-STAT-CPU")
-  (:export "UPDATE-SYSTEM-INFO" "UPDATE-CPU-USAGE" "GET-CPU-USAGE")
+  (:export "UPDATE-SYSTEM-INFO" "UPDATE-CPU-USAGE"
+	   "GET-CPU-USAGE" "GET-MEMORY-USAGE")
   )
 
 (in-package :sysmon)
@@ -34,7 +35,7 @@
 	 (ret-cpu-usage
 	  (if *last-stat-cpu*
 	      (flet ((sum (stat-cpu)
-		       (let ((ret 1))
+		       (let ((ret 0))
 			 (dolist (item stat-cpu)
 			   (when (numberp item)
 			     (setf ret (+ ret item))))
@@ -46,14 +47,16 @@
 		      (user (diff-item :user))
 		      (system (diff-item :system))
 		      (iowait (diff-item :iowait)))
-		  (list :total (/ (+ user system) sum)
-			:user (/ user sum)
-			:system (/ system sum)
-			:iowait (/ iowait sum)
-			:from-last (/ sum
-				      *sc-clock-tick*
-				      *sc-processor-number*))))
-	      *last-cpu-usage*)))
+		  (if (= sum 0)
+		      '(:total 0 :user 0 :system 0 :iowait 0 :from-last 0)
+		      (list :total (/ (+ user system) sum)
+			    :user (/ user sum)
+			    :system (/ system sum)
+			    :iowait (/ iowait sum)
+			    :from-last (/ sum
+					  *sc-clock-tick*
+					  *sc-processor-number*)))))
+		*last-cpu-usage*)))
     (setq *last-stat-cpu* (read-stat-cpu))
     (setq *last-cpu-usage* ret-cpu-usage)
     ret-cpu-usage))
@@ -77,5 +80,33 @@
 
 (defun zigzag-merge (lst1 lst2)
   (apply #'concatenate 'list (mapcar #'list lst1 lst2)))
+
+(defun get-memory-usage ()
+  (let ((memtotal -1)
+	(memused -1)
+	(memfree -1)
+	(memcached -1))
+    (flet ((get-num (line)
+	     (parse-integer line
+			    :junk-allowed t
+			    :start (+ 1 (search ":" line)))))
+      (with-open-file (s "/proc/meminfo")
+	(loop while (or (= memtotal -1)
+			(= memfree -1)
+			(= memcached -1))
+	     do
+	     (let ((line (read-line s)))
+	       (cond
+		 ((search "MemTotal:" line)
+		  (setf memtotal (get-num line)))
+		 ((search "MemFree:" line)
+		  (setf memfree (get-num line)))
+		 ((search "Cached:" line)
+		  (setf memcached (get-num line)))))))
+      (setf memused (- memtotal memfree))
+      (if (= memtotal 0)
+	  '(:used 0 :cached 0)
+	  (list :used (/ (- memused memcached) memtotal)
+		:cached (/ memcached memtotal))))))
 
 (provide "SYSTEM-MONITOR")
