@@ -176,12 +176,15 @@
 "
 	"^03%N^n "
 	'(:eval
-	  (let ((cpu-usage (sysmon:get-cpu-usage)))
-	    (format nil "cpu:~4,1,2,,F(u:~4,1,2,,F s:~4,1,2,,F io:~4,1,2,,F)"
+	  (let ((cpu-usage (sysmon:get-cpu-usage))
+		(memory-usage (sysmon:get-memory-usage)))
+	    (format nil "cpu:~4,1,2,,F(u:~4,1,2,,F s:~4,1,2,,F io:~4,1,2,,F), mem:~4,1,2,,F(~4,1,2,,F$)"
 		    (getf cpu-usage :total)
 		    (getf cpu-usage :user)
 		    (getf cpu-usage :system)
-		    (getf cpu-usage :iowait 0))))
+		    (getf cpu-usage :iowait 0)
+		    (getf memory-usage :used)
+		    (getf memory-usage :cached))))
 	)))
 (setf *screen-mode-line-format*
       mode-line-format-with-sysmon)
@@ -191,6 +194,8 @@
 			     mode-line-format-with-sysmon)
 		      mode-line-format-without-sysmon
 		      mode-line-format-with-sysmon)))
+
+(sysmon:get-memory-usage)
 
 (unless (head-mode-line (current-head))
   (mode-line))
