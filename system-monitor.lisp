@@ -9,7 +9,7 @@
 (in-package :sysmon)
 
 (defvar *last-stat-cpu* nil)
-(defvar *last-cpu-usage* '(:total 0 :user 0 :system 0 :from-last 0))
+(defvar *last-cpu-usage* '(:total 0 :user 0 :system 0 :iowait 0 :from-last 0))
 
 (defvar *SC_CLK_TCK* 2)
 (sb-c-call:define-alien-routine "sysconf" sb-c-call:long (name sb-c-call:int))
@@ -44,10 +44,12 @@
 			  (getf *last-stat-cpu* item-name 0))))
 		(let ((sum (- (sum cur-stat-cpu) (sum *last-stat-cpu*)))
 		      (user (diff-item :user))
-		      (system (diff-item :system)))
+		      (system (diff-item :system))
+		      (iowait (diff-item :iowait)))
 		  (list :total (/ (+ user system) sum)
 			:user (/ user sum)
 			:system (/ system sum)
+			:iowait (/ iowait sum)
 			:from-last (/ sum
 				      *sc-clock-tick*
 				      *sc-processor-number*))))
