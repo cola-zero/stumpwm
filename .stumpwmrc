@@ -26,7 +26,7 @@
   (cancel-timer mode-line-updater)
   (setq mode-line-updater nil))
 (setq mode-line-updater
-      (run-with-timer 0 1 'stumpwm:run-commands "nop"))
+      (run-with-timer 0 1.5 'stumpwm:run-commands "nop"))
 
 ; --- process management ----------------------------------------
 (defun ps-exists (ps)
