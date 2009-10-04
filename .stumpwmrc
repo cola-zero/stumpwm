@@ -13,10 +13,15 @@
 
 ; --- system monitoring  ----------------------------------------
 (defvar sysmon-timer nil)
+(defvar mode-line-updater nil)
 
 (when sysmon-timer (cancel-timer sysmon-timer))
 (setq sysmon-timer
       (run-with-timer 0 1 'sysmon:update-system-info))
+
+(when mode-line-updater (cancel-timer mode-line-updater))
+(setq mode-line-updater
+      (run-with-timer 0 1.5 'update-all-mode-lines))
 
 ; --- process management ----------------------------------------
 (defun ps-exists (ps)
@@ -160,10 +165,11 @@
 	    "^03%N^n "
 	    '(:eval
 	      (let ((cpu-usage (sysmon:get-cpu-usage)))
-		(format nil "cpu: ~,1,2,,F(user:~,1,2,,F, sys:~,1,2,,F)"
+		(format nil "cpu:~4,1,2,,F(u:~4,1,2,,F s:~4,1,2,,F io:~4,1,2,,F)"
 			(getf cpu-usage :total)
 			(getf cpu-usage :user)
-			(getf cpu-usage :system))))
+			(getf cpu-usage :system)
+			(getf cpu-usage :iowait 0))))
 	    ))
 (unless (head-mode-line (current-head))
   (mode-line))
