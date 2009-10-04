@@ -34,7 +34,7 @@
 	 (ret-cpu-usage
 	  (if *last-stat-cpu*
 	      (flet ((sum (stat-cpu)
-		       (let ((ret 0))
+		       (let ((ret 1))
 			 (dolist (item stat-cpu)
 			   (when (numberp item)
 			     (setf ret (+ ret item))))
