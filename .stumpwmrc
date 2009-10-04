@@ -160,22 +160,38 @@
 (setf *mode-line-background-color* "black")
 (setf *mode-line-foreground-color* "wheat")
 (setf *mode-line-border-color* "dark grey")
-(setf *screen-mode-line-format*
+
+(setq mode-line-format-without-sysmon
       (list "^03%N^n "
             '(:eval (run-shell-command
                      "LANG=c; date '+%m/%d(%a)_%H:%M'|tr -d [:cntrl:]" t))
             " | %g"
-	    "
-"
-	    "^03%N^n "
-	    '(:eval
-	      (let ((cpu-usage (sysmon:get-cpu-usage)))
-		(format nil "cpu:~4,1,2,,F(u:~4,1,2,,F s:~4,1,2,,F io:~4,1,2,,F)"
-			(getf cpu-usage :total)
-			(getf cpu-usage :user)
-			(getf cpu-usage :system)
-			(getf cpu-usage :iowait 0))))
 	    ))
+(setq mode-line-format-with-sysmon
+      (concatenate
+       'list
+       mode-line-format-without-sysmon
+       (list
+	"
+"
+	"^03%N^n "
+	'(:eval
+	  (let ((cpu-usage (sysmon:get-cpu-usage)))
+	    (format nil "cpu:~4,1,2,,F(u:~4,1,2,,F s:~4,1,2,,F io:~4,1,2,,F)"
+		    (getf cpu-usage :total)
+		    (getf cpu-usage :user)
+		    (getf cpu-usage :system)
+		    (getf cpu-usage :iowait 0))))
+	)))
+(setf *screen-mode-line-format*
+      mode-line-format-with-sysmon)
+(defcommand sysmon () ()
+	    (setf *screen-mode-line-format*
+		  (if (equal *screen-mode-line-format*
+			     mode-line-format-with-sysmon)
+		      mode-line-format-without-sysmon
+		      mode-line-format-with-sysmon)))
+
 (unless (head-mode-line (current-head))
   (mode-line))
 
