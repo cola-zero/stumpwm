@@ -9,6 +9,15 @@
       do (load (make-pathname :name file :type "lisp" :directory
                               '(:relative ".stumpwm.d" "contrib"))))
 
+(load (data-dir-file "system-monitor" "lisp"))
+
+; --- system monitoring  ----------------------------------------
+(defvar sysmon-timer nil)
+
+(when sysmon-timer (cancel-timer sysmon-timer))
+(setq sysmon-timer
+      (run-with-timer 0 1 'sysmon:update-system-info))
+
 ; --- process management ----------------------------------------
 (defun ps-exists (ps)
   (let ((f "ps -ef | grep ~S | grep -v -e grep -e stumpish | wc -l"))
