@@ -3,9 +3,9 @@
   (:nicknames "SYSMON")
   (:use "COMMON-LISP" "COMMON-LISP-USER")
   ;; (:shadow "READ-STAT-CPU")
-  (:export "UPDATE-SYSTEM-INFO" "UPDATE-CPU-USAGE"
-	   "GET-CPU-USAGE" "GET-MEMORY-USAGE"
-	   "UPDATE-NET-USAGE")
+  (:export "UPDATE-SYSTEM-INFO" "UPDATE-CPU-USAGE" "UPDATE-NET-USAGE"
+	   "GET-CPU-USAGE" "GET-MEMORY-USAGE" "GET-NET-USAGE"
+	   )
   )
 
 (in-package :sysmon)
@@ -29,7 +29,8 @@
 	(parse-integer num-processor-str)))
 
 (defun update-system-info ()
-  (update-cpu-usage))
+  (update-cpu-usage)
+  (update-net-usage))
 
 (defun update-cpu-usage ()
   (let* ((cur-stat-cpu (read-stat-cpu))
@@ -164,7 +165,10 @@
 			      1)))))
       (setf *last-net-dev-time* (get-internal-real-time))
       (setf *last-net-dev* net-dev)
-      (setf *last-net-usage usage)
+      (setf *last-net-usage* usage)
       usage)))
+
+(defun get-net-usage ()
+  *last-net-usage*)
 
 (provide "SYSTEM-MONITOR")
