@@ -52,6 +52,7 @@
 
 (run-shell-command "xsetroot -solid black")
 (start-uniq-command-ps "nm-applet" :op "--sm-disable")
+(start-uniq-command-ps "dropbox" :op "start")
 (start-uniq-command-ps "gnome-settings-daemon")
 (start-uniq-command-ps "gnome-power-manager")
 (start-uniq-command-ps "gnome-valume-manager")
