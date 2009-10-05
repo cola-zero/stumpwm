@@ -4,7 +4,8 @@
   (:use "COMMON-LISP" "COMMON-LISP-USER")
   ;; (:shadow "READ-STAT-CPU")
   (:export "UPDATE-SYSTEM-INFO" "UPDATE-CPU-USAGE"
-	   "GET-CPU-USAGE" "GET-MEMORY-USAGE")
+	   "GET-CPU-USAGE" "GET-MEMORY-USAGE"
+	   "UPDATE-NET-USAGE")
   )
 
 (in-package :sysmon)
@@ -108,5 +109,62 @@
 	  '(:used 0 :cached 0)
 	  (list :used (/ (- memused memcached) memtotal)
 		:cached (/ memcached memtotal))))))
+
+(defvar *last-net-usage* 
+  '(:recv 0 :send 0 :from-last 0))
+(defvar *last-net-dev* nil)
+(defvar *last-net-dev-time* 0)
+
+(defun update-net-usage ()
+  (flet ((parse-dev-line (line)
+	   (let* ((colon-idx (search ":" line))
+		  (iface (string-trim " " (subseq line 0 colon-idx)))
+		  (numline (format nil "(~a)" (subseq line (1+ colon-idx))))
+		  (nums (with-input-from-string (s numline) (read s)))
+		  (nums (zigzag-merge '(:recv-bytes :recv-packets :recv-errs 
+					:recv-drop :recv-fifo :recv-frame
+					:recv-compressed :recv-multicast
+					:trans-bytes :trans-packets
+					:trans-errs :trans-drop
+					:trans-fifo :trans-colls
+					:trans-carrier :trans-compressed)
+				      nums)))
+	     (list iface nums)))
+	 (summarize-dev (net-dev)
+	   (list :recv
+		 (apply #'+ (mapcar (lambda (x) (getf (cadr x) :recv-bytes))
+				    net-dev))
+		 :send
+		 (apply #'+ (mapcar (lambda (x) (getf (cadr x) :trans-bytes))
+				    net-dev)))))
+    (let* ((net-dev
+	    (with-open-file (s "/proc/net/dev")
+	      (read-line s)(read-line s) ;; skip headers
+	      (let ((ret nil))
+		(handler-case
+		    (loop while t
+		       do
+		       (let ((dev-line (parse-dev-line (read-line s))))
+			 ;; filter local loopback
+			 (unless (equal "lo" (car dev-line))
+			   (push dev-line ret))))
+		  (end-of-file (err) ret)))))
+	   (last-dev (summarize-dev *last-net-dev*))
+	   (cur-dev (summarize-dev net-dev))
+	   (usage (list :recv (- (getf cur-dev :recv)
+				 (getf last-dev :recv 0))
+			:send (- (getf cur-dev :send)
+				 (getf last-dev :send 0))
+			:from-last
+			(let ((now (get-internal-real-time)))
+			  (if *last-net-dev-time*
+			      (/ (- (get-internal-real-time)
+				    *last-net-dev-time*)
+				 internal-time-units-per-second)
+			      1)))))
+      (setf *last-net-dev-time* (get-internal-real-time))
+      (setf *last-net-dev* net-dev)
+      (setf *last-net-usage usage)
+      usage)))
 
 (provide "SYSTEM-MONITOR")
