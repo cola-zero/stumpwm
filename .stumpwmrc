@@ -168,6 +168,18 @@
                      "LANG=c; date '+%m/%d(%a)_%H:%M'|tr -d [:cntrl:]" t))
             " | %g"
 	    ))
+(defun pprint-net (bytes-per-sec)
+  (multiple-value-bind (val unit)
+      (cond ((< bytes-per-sec 1024) 
+	     (values bytes-per-sec "B/s "))
+	    ((< bytes-per-sec (* 1024 1024))
+	     (values (/ bytes-per-sec 1024) "kB/s"))
+	    ((< bytes-per-sec (* 1024 1024 1024))
+	     (values (/ bytes-per-sec 1024 1024) "MB/s"))
+	    (t
+	     (values (/ bytes-per-sec 1024 1024 1024) "GB/s")))
+    (format nil "~4,1,,,F ~A" val unit)))
+
 (setq mode-line-format-with-sysmon
       (concatenate
        'list
@@ -178,14 +190,19 @@
 	"^03%N^n "
 	'(:eval
 	  (let ((cpu-usage (sysmon:get-cpu-usage))
-		(memory-usage (sysmon:get-memory-usage)))
-	    (format nil "cpu:~4,1,2,,F(u:~4,1,2,,F s:~4,1,2,,F io:~4,1,2,,F), mem:~4,1,2,,F(~4,1,2,,F$)"
+		(memory-usage (sysmon:get-memory-usage))
+		(net-usage (sysmon:get-net-usage)))
+	    (format nil "cpu:~4,1,2,,F(u:~4,1,2,,F s:~4,1,2,,F io:~4,1,2,,F), mem:~4,1,2,,F(~4,1,2,,F$), net:recv=~a,send=~a"
 		    (getf cpu-usage :total)
 		    (getf cpu-usage :user)
 		    (getf cpu-usage :system)
 		    (getf cpu-usage :iowait 0)
 		    (getf memory-usage :used)
-		    (getf memory-usage :cached))))
+		    (getf memory-usage :cached)
+		    (pprint-net (/ (getf net-usage :recv)
+				   (getf net-usage :from-last)))
+		    (pprint-net (/ (getf net-usage :send)
+				   (getf net-usage :from-last))))))
 	)))
 (setf *screen-mode-line-format*
       mode-line-format-with-sysmon)
