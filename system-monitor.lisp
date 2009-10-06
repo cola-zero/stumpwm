@@ -1,10 +1,13 @@
 
+(asdf:operate 'asdf:load-op 'cl-ppcre)
+
 (defpackage "SYSTEM-MONITOR"
   (:nicknames "SYSMON")
   (:use "COMMON-LISP" "COMMON-LISP-USER")
   ;; (:shadow "READ-STAT-CPU")
   (:export "UPDATE-SYSTEM-INFO" "UPDATE-CPU-USAGE" "UPDATE-NET-USAGE"
 	   "GET-CPU-USAGE" "GET-MEMORY-USAGE" "GET-NET-USAGE"
+	   "GET-BATTERY-GRAPH"
 	   )
   )
 
@@ -170,5 +173,30 @@
 
 (defun get-net-usage ()
   *last-net-usage*)
+
+(defun get-battery-graph ()
+  (let* ((acpi-str
+	  (with-output-to-string (s)
+	    (sb-ext:run-program "/bin/sh" '("-c" "acpi") :output s)))
+	 (charged-ratio
+	  (parse-integer acpi-str :start (cl-ppcre:scan "\\d+%" acpi-str)
+			 :junk-allowed t))
+	 (state (cond ((search "Discharging" acpi-str) 'discharging)
+		      ((search "100%" acpi-str) 'full-charged)
+		      (t 'charging))))
+    (format nil "~A~A~a[~A]"
+	    (make-string (floor (/ charged-ratio 10))
+			 :initial-element #\@)
+	    (let ((digit (mod charged-ratio 10)))
+	      (if (= 0 digit)
+		  ""
+		  (cond ((> digit 7) "O")
+			((> digit 4) "o")
+			(t "."))))
+	    (make-string (- 10 (ceiling (/ charged-ratio 10)))
+			 :initial-element #\_)
+	    (if (eq state 'discharging)
+		"=//=" "===="))
+  ))
 
 (provide "SYSTEM-MONITOR")
