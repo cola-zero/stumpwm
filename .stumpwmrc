@@ -166,7 +166,8 @@
       (list "^03%N^n "
             '(:eval (run-shell-command
                      "LANG=c; date '+%m/%d(%a)_%H:%M'|tr -d [:cntrl:]" t))
-            " | %g"
+            " | %g | "
+	    '(:eval (sysmon:get-battery-graph))
 	    ))
 (defun pprint-net (bytes-per-sec)
   (multiple-value-bind (val unit)
