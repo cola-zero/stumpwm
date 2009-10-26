@@ -56,8 +56,8 @@
 (start-uniq-command-ps "gnome-settings-daemon")
 (start-uniq-command-ps "gnome-power-manager")
 (start-uniq-command-ps "gnome-valume-manager")
-(start-uniq-command-ps "update-notifier")
-(run-or-raise-emacs)
+; (start-uniq-command-ps "update-notifier")
+; (run-or-raise-emacs)
 
 ; --- shell command definitions  --------------------------------
 (define-stumpwm-type :password (input prompt)
@@ -203,8 +203,8 @@
 		    (pprint-net (/ (getf net-usage :recv)
 				   (getf net-usage :from-last)))
 		    (pprint-net (/ (getf net-usage :send)
-				   (getf net-usage :from-last))))))
-	)))
+				   (getf net-usage :from-last)))))))
+       ))
 (setf *screen-mode-line-format*
       mode-line-format-with-sysmon)
 (defcommand sysmon () ()
